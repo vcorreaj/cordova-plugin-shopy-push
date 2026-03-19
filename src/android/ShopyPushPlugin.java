@@ -16,7 +16,6 @@ import android.provider.Settings;
 import android.util.Log;
 
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
@@ -33,46 +32,63 @@ public class ShopyPushPlugin extends CordovaPlugin {
     @Override
     protected void pluginInitialize() {
         super.pluginInitialize();
-        Log.d(TAG, "pluginInitialize: Iniciando plugin...");
+        Log.i(TAG, "========================================");
+        Log.i(TAG, "pluginInitialize: Iniciando ShopyPushPlugin");
+        Log.i(TAG, "========================================");
         
-        // Inicializar Firebase de manera más robusta
+        // Intentar inicializar Firebase inmediatamente
         initializeFirebase();
         
-        // Iniciar servicio
+        // Iniciar servicio en segundo plano
         startPushService();
     }
     
     private synchronized void initializeFirebase() {
         try {
-            Context context = cordova.getActivity().getApplicationContext();
+            Log.i(TAG, "Inicializando Firebase...");
             
-            // Verificar si ya hay una instancia de Firebase
+            Context context = cordova.getActivity().getApplicationContext();
+            Log.i(TAG, "Context obtenido: " + context.getPackageName());
+            
+            // Verificar si ya hay instancias de Firebase
             if (FirebaseApp.getApps(context).isEmpty()) {
-                Log.d(TAG, "No hay instancia de Firebase, creando una nueva...");
+                Log.i(TAG, "No hay instancias de Firebase, creando nueva...");
                 FirebaseApp.initializeApp(context);
                 firebaseInitialized = true;
-                Log.d(TAG, "Firebase inicializado correctamente");
+                Log.i(TAG, "✅ Firebase inicializado correctamente");
             } else {
-                Log.d(TAG, "Firebase ya estaba inicializado");
+                Log.i(TAG, "✅ Firebase ya estaba inicializado");
                 firebaseInitialized = true;
             }
+            
+            // Verificar que FirebaseMessaging esté disponible
+            try {
+                FirebaseMessaging.getInstance();
+                Log.i(TAG, "✅ FirebaseMessaging disponible");
+            } catch (Exception e) {
+                Log.e(TAG, "❌ FirebaseMessaging NO disponible: " + e.getMessage());
+            }
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error inicializando Firebase: " + e.getMessage(), e);
+            Log.e(TAG, "❌ Error inicializando Firebase: " + e.getMessage(), e);
             firebaseInitialized = false;
         }
     }
     
     private void ensureFirebaseInitialized() throws Exception {
         if (!firebaseInitialized) {
+            Log.w(TAG, "Firebase no inicializado, intentando de nuevo...");
             initializeFirebase();
         }
         if (!firebaseInitialized) {
-            throw new Exception("Firebase no pudo inicializarse");
+            throw new Exception("Firebase no pudo inicializarse después de reintentar");
         }
     }
     
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        Log.i(TAG, "execute: " + action);
+        
         try {
             // Para acciones que requieren Firebase, asegurar inicialización
             if (action.equals("getToken") || action.equals("onTokenRefresh")) {
@@ -114,6 +130,7 @@ public class ShopyPushPlugin extends CordovaPlugin {
                     openBatteryOptimizationSettings(callbackContext);
                     return true;
                 default:
+                    Log.w(TAG, "Acción desconocida: " + action);
                     return false;
             }
         } catch (Exception e) {
@@ -124,30 +141,33 @@ public class ShopyPushPlugin extends CordovaPlugin {
     }
     
     private void getToken(final CallbackContext callbackContext) {
+        Log.i(TAG, "getToken: iniciando...");
+        
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Log.d(TAG, "Obteniendo token FCM...");
-                    
-                    // Verificar Firebase antes de obtener token
+                    // Verificar Firebase antes de continuar
                     ensureFirebaseInitialized();
+                    
+                    Log.i(TAG, "Solicitando token a FirebaseMessaging...");
                     
                     FirebaseMessaging.getInstance().getToken()
                         .addOnCompleteListener(task -> {
                             if (task.isSuccessful() && task.getResult() != null) {
                                 String token = task.getResult();
-                                Log.d(TAG, "Token obtenido: " + token);
+                                Log.i(TAG, "✅ Token obtenido: " + token);
                                 callbackContext.success(token);
                             } else {
                                 Exception e = task.getException();
                                 String errorMsg = (e != null) ? e.getMessage() : "Error desconocido";
-                                Log.e(TAG, "Error obteniendo token: " + errorMsg);
-                                callbackContext.error("Error obteniendo token FCM: " + errorMsg);
+                                Log.e(TAG, "❌ Error en task: " + errorMsg);
+                                callbackContext.error("Error obteniendo token: " + errorMsg);
                             }
                         });
+                        
                 } catch (Exception e) {
-                    Log.e(TAG, "Excepción en getToken: " + e.getMessage(), e);
+                    Log.e(TAG, "❌ Excepción en getToken: " + e.getMessage(), e);
                     callbackContext.error("Error: " + e.getMessage());
                 }
             }
