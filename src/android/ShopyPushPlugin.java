@@ -11,11 +11,13 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.PowerManager;  // ← AGREGADO
+import android.os.PowerManager;
 import android.provider.Settings;
+import android.util.Log;
 
-import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,57 +28,98 @@ public class ShopyPushPlugin extends CordovaPlugin {
     private static CallbackContext notificationCallbackContext;
     private static CallbackContext tokenRefreshCallbackContext;
     private static Map<String, Object> lastNotificationData;
+    private static boolean firebaseInitialized = false;
     
     @Override
     protected void pluginInitialize() {
         super.pluginInitialize();
+        Log.d(TAG, "pluginInitialize: Iniciando plugin...");
         
-        Context context = cordova.getActivity().getApplicationContext();
-        if (FirebaseApp.getApps(context).isEmpty()) {
-            FirebaseApp.initializeApp(context);
-        }
+        // Inicializar Firebase de manera más robusta
+        initializeFirebase();
         
+        // Iniciar servicio
         startPushService();
+    }
+    
+    private synchronized void initializeFirebase() {
+        try {
+            Context context = cordova.getActivity().getApplicationContext();
+            
+            // Verificar si ya hay una instancia de Firebase
+            if (FirebaseApp.getApps(context).isEmpty()) {
+                Log.d(TAG, "No hay instancia de Firebase, creando una nueva...");
+                FirebaseApp.initializeApp(context);
+                firebaseInitialized = true;
+                Log.d(TAG, "Firebase inicializado correctamente");
+            } else {
+                Log.d(TAG, "Firebase ya estaba inicializado");
+                firebaseInitialized = true;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error inicializando Firebase: " + e.getMessage(), e);
+            firebaseInitialized = false;
+        }
+    }
+    
+    private void ensureFirebaseInitialized() throws Exception {
+        if (!firebaseInitialized) {
+            initializeFirebase();
+        }
+        if (!firebaseInitialized) {
+            throw new Exception("Firebase no pudo inicializarse");
+        }
     }
     
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        switch (action) {
-            case "getToken":
-                getToken(callbackContext);
-                return true;
-            case "checkPermissions":
-                checkPermissions(callbackContext);
-                return true;
-            case "requestPermissions":
-                requestPermissions(callbackContext);
-                return true;
-            case "onNotification":
-                onNotification(callbackContext);
-                return true;
-            case "onTokenRefresh":
-                onTokenRefresh(callbackContext);
-                return true;
-            case "isServiceActive":
-                isServiceActive(callbackContext);
-                return true;
-            case "getAndroidVersion":
-                getAndroidVersion(callbackContext);
-                return true;
-            case "openAppSettings":
-                openAppSettings(callbackContext);
-                return true;
-            case "clearAllNotifications":
-                clearAllNotifications(callbackContext);
-                return true;
-            case "checkBatteryOptimizations":
-                checkBatteryOptimizations(callbackContext);
-                return true;
-            case "openBatteryOptimizationSettings":
-                openBatteryOptimizationSettings(callbackContext);
-                return true;
-            default:
-                return false;
+        try {
+            // Para acciones que requieren Firebase, asegurar inicialización
+            if (action.equals("getToken") || action.equals("onTokenRefresh")) {
+                ensureFirebaseInitialized();
+            }
+            
+            switch (action) {
+                case "getToken":
+                    getToken(callbackContext);
+                    return true;
+                case "checkPermissions":
+                    checkPermissions(callbackContext);
+                    return true;
+                case "requestPermissions":
+                    requestPermissions(callbackContext);
+                    return true;
+                case "onNotification":
+                    onNotification(callbackContext);
+                    return true;
+                case "onTokenRefresh":
+                    onTokenRefresh(callbackContext);
+                    return true;
+                case "isServiceActive":
+                    isServiceActive(callbackContext);
+                    return true;
+                case "getAndroidVersion":
+                    getAndroidVersion(callbackContext);
+                    return true;
+                case "openAppSettings":
+                    openAppSettings(callbackContext);
+                    return true;
+                case "clearAllNotifications":
+                    clearAllNotifications(callbackContext);
+                    return true;
+                case "checkBatteryOptimizations":
+                    checkBatteryOptimizations(callbackContext);
+                    return true;
+                case "openBatteryOptimizationSettings":
+                    openBatteryOptimizationSettings(callbackContext);
+                    return true;
+                default:
+                    return false;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error en execute: " + e.getMessage(), e);
+            callbackContext.error("Error: " + e.getMessage());
+            return true;
         }
     }
     
@@ -84,17 +127,34 @@ public class ShopyPushPlugin extends CordovaPlugin {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
-                FirebaseMessaging.getInstance().getToken()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful() && task.getResult() != null) {
-                            callbackContext.success(task.getResult());
-                        } else {
-                            callbackContext.error("Error obteniendo token FCM");
-                        }
-                    });
+                try {
+                    Log.d(TAG, "Obteniendo token FCM...");
+                    
+                    // Verificar Firebase antes de obtener token
+                    ensureFirebaseInitialized();
+                    
+                    FirebaseMessaging.getInstance().getToken()
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful() && task.getResult() != null) {
+                                String token = task.getResult();
+                                Log.d(TAG, "Token obtenido: " + token);
+                                callbackContext.success(token);
+                            } else {
+                                Exception e = task.getException();
+                                String errorMsg = (e != null) ? e.getMessage() : "Error desconocido";
+                                Log.e(TAG, "Error obteniendo token: " + errorMsg);
+                                callbackContext.error("Error obteniendo token FCM: " + errorMsg);
+                            }
+                        });
+                } catch (Exception e) {
+                    Log.e(TAG, "Excepción en getToken: " + e.getMessage(), e);
+                    callbackContext.error("Error: " + e.getMessage());
+                }
             }
         });
     }
+    
+    // ... resto de métodos igual que antes ...
     
     private void checkPermissions(CallbackContext callbackContext) {
         JSONObject result = new JSONObject();
