@@ -4,12 +4,9 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ServiceInfo;
 import android.os.Build;
-import android.os.IBinder;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
@@ -22,8 +19,8 @@ import java.util.Map;
 public class ShopyPushService extends FirebaseMessagingService {
     
     private static final String TAG = "ShopyPushService";
-    private static final String CHANNEL_ID = "shopy_foreground_channel";
-    private static final int FOREGROUND_NOTIFICATION_ID = 1001;
+    private static final String CHANNEL_ID = "shopy_channel";
+    private static final int NOTIFICATION_ID = 1001;
     private static boolean isRunning = false;
     
     @Override
@@ -31,20 +28,24 @@ public class ShopyPushService extends FirebaseMessagingService {
         super.onCreate();
         isRunning = true;
         Log.i(TAG, "========================================");
-        Log.i(TAG, "🚀 SERVICIO PERSONALIZADO INICIADO");
+        Log.i(TAG, "🚀 SERVICIO DE NOTIFICACIONES INICIADO");
         Log.i(TAG, "========================================");
         
         createNotificationChannel();
         startForegroundService();
     }
     
-    // 🔥 ELIMINADO: onStartCommand (no se puede sobrescribir)
-    
     @Override
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
-        Log.i(TAG, "⏹️ Servicio personalizado detenido");
+        Log.i(TAG, "⏹️ Servicio detenido");
+    }
+    
+    @Override
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+        Log.d(TAG, "🔄 Nuevo token: " + token);
     }
     
     @Override
@@ -58,16 +59,17 @@ public class ShopyPushService extends FirebaseMessagingService {
         String body = data.get("body");
         String messageId = data.get("messageId");
         
-        showLocalNotification(title, body, messageId);
+        showNotification(title, body, messageId);
     }
     
-    private void showLocalNotification(String title, String body, String messageId) {
+    private void showNotification(String title, String body, String messageId) {
         try {
+            // Intent para abrir la app
             Intent intent = new Intent(this, org.apache.cordova.CordovaActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             intent.putExtra("messageId", messageId);
-            intent.putExtra("screen", "/tabs/notifications");
             
+            // 🔥 FLAGS CORRECTOS PARA ANDROID 12+
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 flags |= PendingIntent.FLAG_IMMUTABLE;
@@ -76,18 +78,18 @@ public class ShopyPushService extends FirebaseMessagingService {
             PendingIntent pendingIntent = PendingIntent.getActivity(
                 this, 0, intent, flags);
             
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title != null ? title : "Nueva notificación")
                 .setContentText(body != null ? body : "")
                 .setSmallIcon(getApplicationInfo().icon)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+                .build();
             
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             int id = messageId != null ? Integer.parseInt(messageId) : (int) System.currentTimeMillis();
-            manager.notify(id, builder.build());
+            manager.notify(id, notification);
             
             Log.i(TAG, "✅ Notificación mostrada");
             
@@ -107,6 +109,7 @@ public class ShopyPushService extends FirebaseMessagingService {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
+                Log.i(TAG, "✅ Canal de notificaciones creado");
             }
         }
     }
@@ -121,11 +124,13 @@ public class ShopyPushService extends FirebaseMessagingService {
             .build();
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(FOREGROUND_NOTIFICATION_ID, notification, 
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            startForeground(NOTIFICATION_ID, notification, 
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
         } else {
-            startForeground(FOREGROUND_NOTIFICATION_ID, notification);
+            startForeground(NOTIFICATION_ID, notification);
         }
+        
+        Log.i(TAG, "✅ Servicio en primer plano activo");
     }
     
     public static boolean isRunning() {
