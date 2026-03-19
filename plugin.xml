@@ -4,8 +4,7 @@
         version="1.0.0">
     
     <name>ShopyPush</name>
-    <description>Plugin personalizado que activa Local Notification</description>
-    <license>MIT</license>
+    <description>Plugin que escucha FCM y activa Local Notification</description>
     
     <js-module src="www/ShopyPush.js" name="ShopyPush">
         <clobbers target="ShopyPush" />
@@ -18,32 +17,11 @@
             </feature>
         </config-file>
         
-        <!-- Archivos fuente -->
         <source-file src="src/android/ShopyPushPlugin.java" target-dir="src/com/shopy/push" />
-        <source-file src="src/android/ShopyPushService.java" target-dir="src/com/shopy/push" />
         
-        <!-- Dependencias de Firebase -->
-        <framework src="com.google.firebase:firebase-messaging:23.4.0" />
-        
-        <!-- Permisos -->
+        <!-- Permiso para recibir broadcasts -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-            <uses-permission android:name="android.permission.WAKE_LOCK" />
-        </config-file>
-        
-        <!-- Servicio que recibe mensajes FCM -->
-        <config-file target="AndroidManifest.xml" parent="/manifest/application">
-            <service
-                android:name="com.shopy.push.ShopyPushService"
-                android:enabled="true"
-                android:exported="false"
-                android:foregroundServiceType="dataSync">
-                <intent-filter>
-                    <action android:name="com.google.firebase.MESSAGING_EVENT" />
-                </intent-filter>
-            </service>
+            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
         </config-file>
     </platform>
 </plugin>
