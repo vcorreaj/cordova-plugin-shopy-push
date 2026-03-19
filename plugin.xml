@@ -4,7 +4,7 @@
         version="1.0.0">
     
     <name>ShopyPush</name>
-    <description>Background service and notifications for Android 14+</description>
+    <description>Plugin personalizado que activa Local Notification</description>
     <license>MIT</license>
     
     <js-module src="www/ShopyPush.js" name="ShopyPush">
@@ -24,7 +24,6 @@
         
         <!-- Dependencias de Firebase -->
         <framework src="com.google.firebase:firebase-messaging:23.4.0" />
-        <framework src="com.google.firebase:firebase-common:20.4.0" />
         
         <!-- Permisos -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
@@ -34,7 +33,7 @@
             <uses-permission android:name="android.permission.WAKE_LOCK" />
         </config-file>
         
-        <!-- Servicio -->
+        <!-- Servicio que recibe mensajes FCM -->
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <service
                 android:name="com.shopy.push.ShopyPushService"
