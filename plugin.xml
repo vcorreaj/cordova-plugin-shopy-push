@@ -4,9 +4,7 @@
         version="1.0.0">
     
     <name>ShopyPush</name>
-    <description>Cordova Plugin for handling push notifications with native Android 14+ support</description>
-    <license>MIT</license>
-    <keywords>cordova,android,push,notification,firebase,fcm</keywords>
+    <description>Background service for Android 14+</description>
     
     <js-module src="www/ShopyPush.js" name="ShopyPush">
         <clobbers target="ShopyPush" />
@@ -19,53 +17,21 @@
             </feature>
         </config-file>
         
-        <!-- Archivos fuente -->
         <source-file src="src/android/ShopyPushPlugin.java" target-dir="src/com/shopy/push" />
         <source-file src="src/android/ShopyPushService.java" target-dir="src/com/shopy/push" />
-        <source-file src="src/android/ShopyPushReceiver.java" target-dir="src/com/shopy/push" />
-        <source-file src="src/android/ShopyPushNotification.java" target-dir="src/com/shopy/push" />
         
-        <!-- Dependencias de Firebase -->
-        <framework src="com.google.firebase:firebase-messaging:23.4.0" />
-        <framework src="com.google.firebase:firebase-common:20.4.0" />
-        
-        <!-- Permisos -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
             <uses-permission android:name="android.permission.WAKE_LOCK" />
-            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
         </config-file>
         
-        <!-- Servicio y Receiver -->
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <service
                 android:name="com.shopy.push.ShopyPushService"
                 android:enabled="true"
                 android:exported="false"
-                android:foregroundServiceType="dataSync">
-                <intent-filter>
-                    <action android:name="com.google.firebase.MESSAGING_EVENT" />
-                </intent-filter>
-            </service>
-            
-            <receiver
-                android:name="com.shopy.push.ShopyPushReceiver"
-                android:enabled="true"
-                android:exported="false">
-                <intent-filter>
-                    <action android:name="android.intent.action.BOOT_COMPLETED" />
-                </intent-filter>
-            </receiver>
-            
-            <!-- Proveedor de Firebase -->
-            <provider
-                android:name="com.google.firebase.provider.FirebaseInitProvider"
-                android:authorities="${applicationId}.firebaseinitprovider"
-                android:exported="false"
-                android:initOrder="100" />
+                android:foregroundServiceType="dataSync" />
         </config-file>
     </platform>
 </plugin>

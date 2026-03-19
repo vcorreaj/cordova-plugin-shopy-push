@@ -1,63 +1,10 @@
 var exec = require('cordova/exec');
 
-var ShopyPush = {
-    // Registrar token FCM
-    getToken: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'getToken', []);
+module.exports = {
+    startBackgroundService: function(success, error) {
+        exec(success, error, 'ShopyPush', 'startBackgroundService', []);
     },
-    
-    // Verificar permisos
-    checkPermissions: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'checkPermissions', []);
-    },
-    
-    // Solicitar permisos (Android 13+)
-    requestPermissions: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'requestPermissions', []);
-    },
-    
-    // Registrar listener para notificaciones
-    onNotification: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'onNotification', []);
-    },
-    
-    // Registrar listener para token refresh
-    onTokenRefresh: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'onTokenRefresh', []);
-    },
-    
-    // Verificar si el servicio está activo
-    isServiceActive: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'isServiceActive', []);
-    },
-    
-    // Verificar versión de Android
-    getAndroidVersion: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'getAndroidVersion', []);
-    },
-    
-    // Abrir configuración de la app
-    openAppSettings: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'openAppSettings', []);
-    },
-    
-    // Limpiar todas las notificaciones
-    clearAllNotifications: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'clearAllNotifications', []);
-    },
-    // Agregar al objeto ShopyPush
-
-    checkBatteryOptimizations: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'checkBatteryOptimizations', []);
-    },
-
-    openBatteryOptimizationSettings: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'openBatteryOptimizationSettings', []);
-    },
-
-    checkAndroid14Permissions: function(successCallback, errorCallback) {
-        exec(successCallback, errorCallback, 'ShopyPush', 'checkAndroid14Permissions', []);
+    stopBackgroundService: function(success, error) {
+        exec(success, error, 'ShopyPush', 'stopBackgroundService', []);
     }
 };
-
-module.exports = ShopyPush;

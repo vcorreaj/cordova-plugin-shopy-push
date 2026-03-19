@@ -1,113 +1,85 @@
 package com.shopy.push;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.IBinder;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import com.google.firebase.messaging.FirebaseMessagingService;
-import com.google.firebase.messaging.RemoteMessage;
-
-import java.util.HashMap;
-import java.util.Map;
-
-public class ShopyPushService extends FirebaseMessagingService {
+public class ShopyPushService extends Service {
     
     private static final String TAG = "ShopyPushService";
-    private static final String CHANNEL_ID = "shopy_push_channel";
+    private static final String CHANNEL_ID = "shopy_background_channel";
     private static final int NOTIFICATION_ID = 1001;
-    private static boolean isRunning = false;
     
     @Override
     public void onCreate() {
         super.onCreate();
-        isRunning = true;
-        
-        ShopyPushNotification.createNotificationChannel(this, CHANNEL_ID);
+        Log.i(TAG, "Servicio background creado");
+        createNotificationChannel();
         startForegroundService();
+    }
+    
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "onStartCommand");
+        return START_STICKY; // Reiniciar si Android lo mata
     }
     
     @Override
     public void onDestroy() {
         super.onDestroy();
-        isRunning = false;
+        Log.i(TAG, "Servicio background destruido");
     }
     
+    @Nullable
     @Override
-    public void onNewToken(@NonNull String token) {
-        super.onNewToken(token);
-        Log.d(TAG, "Nuevo token FCM: " + token);
-        ShopyPushPlugin.sendTokenRefresh(token);
+    public IBinder onBind(Intent intent) {
+        return null;
     }
     
-    @Override
-    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
-        super.onMessageReceived(remoteMessage);
-        Log.d(TAG, "Mensaje FCM recibido");
-        
-        Map<String, Object> data = new HashMap<>();
-        
-        RemoteMessage.Notification notification = remoteMessage.getNotification();
-        if (notification != null) {
-            data.put("title", notification.getTitle() != null ? notification.getTitle() : "");
-            data.put("body", notification.getBody() != null ? notification.getBody() : "");
-            data.put("wasTapped", false);
-            data.put("clickAction", notification.getClickAction());
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                CHANNEL_ID,
+                "Shopi Background Service",
+                NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription("Mantiene la app activa para recibir notificaciones");
+            
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
         }
-        
-        for (String key : remoteMessage.getData().keySet()) {
-            data.put(key, remoteMessage.getData().get(key));
-        }
-        
-        boolean isForeground = ShopyPushNotification.isAppInForeground(this);
-        
-        if (isForeground) {
-            ShopyPushPlugin.setLastNotificationData(data);
-        } else {
-            showSystemNotification(data);
-        }
-    }
-    
-    private void showSystemNotification(Map<String, Object> data) {
-        String title = data.get("title") != null ? data.get("title").toString() : "Nueva notificación";
-        String body = data.get("body") != null ? data.get("body").toString() : "";
-        
-        ShopyPushNotification.showNotification(this, CHANNEL_ID, title, body, data);
     }
     
     private void startForegroundService() {
-        String channelId = CHANNEL_ID;
-        String title = "Shopy - Notificaciones Activas";
-        String text = "Manteniendo notificaciones activas para no perderte nada";
+        String title = "Shopi";
+        String text = "Manteniendo notificaciones activas";
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 14
-            Notification notification = new NotificationCompat.Builder(this, channelId)
-                .setContentTitle(title)
-                .setContentText(text)
-                .setSmallIcon(getApplicationInfo().icon)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                .build();
-            
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSmallIcon(getApplicationInfo().icon)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .build();
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, 
                 android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-                
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // Android 8-13
-            Notification notification = ShopyPushNotification.createForegroundNotification(
-                this, CHANNEL_ID, title, text);
+        } else {
             startForeground(NOTIFICATION_ID, notification);
         }
+        
+        Log.i(TAG, "✅ Foreground service iniciado");
     }
-    
-    public static boolean isRunning() {
-        return isRunning;
-    }
-     
 }
