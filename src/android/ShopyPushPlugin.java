@@ -60,34 +60,39 @@ public class ShopyPushPlugin extends CordovaPlugin {
         Log.i(TAG, "✅ Receptor FCM registrado");
     }
     
-    private void triggerLocalNotification(JSONObject data) {
-        try {
-            String title = data.optString("title", "Nueva notificación");
-            String body = data.optString("body", "");
-            String messageId = data.optString("messageId", String.valueOf(System.currentTimeMillis()));
-            
-            // Ejecutar en UI thread para llamar JavaScript
-            final String jsCode = "setTimeout(function() { " +
-                "if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification) { " +
-                "   window.cordova.plugins.notification.local.schedule({ " +
-                "       id: " + messageId + ", " +
-                "       title: '" + title.replace("'", "\\'") + "', " +
-                "       text: '" + body.replace("'", "\\'") + "', " +
-                "       foreground: true, " +
-                "       vibrate: true, " +
-                "       icon: 'res://ic_launcher', " +
-                "       color: '#e72b3b' " +
-                "   }); " +
-                "} }, 100);";
-            
-            cordova.getActivity().runOnUiThread(() -> {
-                webView.loadUrl("javascript:" + jsCode);
-            });
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Error activando Local Notification", e);
-        }
+private void triggerLocalNotification(JSONObject data) {
+    try {
+        String title = data.optString("title", "Nueva notificación");
+        String body = data.optString("body", "");
+        String messageId = data.optString("messageId", String.valueOf(System.currentTimeMillis()));
+        
+        // 🔥 ACTIVAR LOCAL NOTIFICATION (fork de Moodle)
+        String jsCode = "setTimeout(function() { " +
+            "if (window.cordova && window.cordova.plugins && window.cordova.plugins.notification) { " +
+            "   window.cordova.plugins.notification.local.schedule({ " +
+            "       id: " + messageId + ", " +
+            "       title: '" + title.replace("'", "\\'") + "', " +
+            "       text: '" + body.replace("'", "\\'") + "', " +
+            "       foreground: true, " +
+            "       vibrate: true, " +
+            "       icon: 'res://ic_launcher', " +
+            "       smallIcon: 'res://ic_launcher', " +
+            "       color: '#e72b3b', " +
+            "       priority: 2, " +
+            "       wakeup: true, " +
+            "       lockscreen: true " +
+            "   }); " +
+            "   console.log('✅ Notificación enviada por Local Notification (fork Moodle)'); " +
+            "} }, 100);";
+        
+        cordova.getActivity().runOnUiThread(() -> {
+            webView.loadUrl("javascript:" + jsCode);
+        });
+        
+    } catch (Exception e) {
+        Log.e(TAG, "Error activando Local Notification", e);
     }
+}
     
     @Override
     public void onDestroy() {
