@@ -44,6 +44,19 @@ var ShopyPush = {
     // Limpiar todas las notificaciones
     clearAllNotifications: function(successCallback, errorCallback) {
         exec(successCallback, errorCallback, 'ShopyPush', 'clearAllNotifications', []);
+    },
+    // Agregar al objeto ShopyPush
+
+    checkBatteryOptimizations: function(successCallback, errorCallback) {
+        exec(successCallback, errorCallback, 'ShopyPush', 'checkBatteryOptimizations', []);
+    },
+
+    openBatteryOptimizationSettings: function(successCallback, errorCallback) {
+        exec(successCallback, errorCallback, 'ShopyPush', 'openBatteryOptimizationSettings', []);
+    },
+
+    checkAndroid14Permissions: function(successCallback, errorCallback) {
+        exec(successCallback, errorCallback, 'ShopyPush', 'checkAndroid14Permissions', []);
     }
 };
 

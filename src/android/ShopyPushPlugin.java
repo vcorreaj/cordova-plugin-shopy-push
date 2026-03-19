@@ -197,7 +197,31 @@ public class ShopyPushPlugin extends CordovaPlugin {
             context.startService(intent);
         }
     }
-    
+    private void checkBatteryOptimizations(CallbackContext callbackContext) {
+        JSONObject result = new JSONObject();
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                String packageName = cordova.getActivity().getPackageName();
+                PowerManager pm = (PowerManager) cordova.getActivity().getSystemService(Context.POWER_SERVICE);
+                boolean isIgnoring = pm.isIgnoringBatteryOptimizations(packageName);
+                result.put("isIgnoringBatteryOptimizations", isIgnoring);
+            } else {
+                result.put("isIgnoringBatteryOptimizations", true);
+            }
+        } catch (JSONException e) {
+            callbackContext.error("Error checking battery optimizations");
+            return;
+        }
+        callbackContext.success(result);
+    }
+    private void openBatteryOptimizationSettings(CallbackContext callbackContext) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            intent.setData(android.net.Uri.parse("package:" + cordova.getActivity().getPackageName()));
+            cordova.getActivity().startActivity(intent);
+        }
+        callbackContext.success();
+    }
     // Métodos estáticos para comunicación con el servicio
     public static void sendNotificationData() {
         if (notificationCallbackContext != null && lastNotificationData != null) {

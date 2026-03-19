@@ -90,17 +90,32 @@ public class ShopyPushService extends FirebaseMessagingService {
         ShopyPushNotification.showNotification(this, CHANNEL_ID, title, body, data);
     }
     
-    private void startForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            Notification notification = ShopyPushNotification.createForegroundNotification(
-                this, CHANNEL_ID, "Shopy Push Service", "Manteniendo notificaciones activas");
-            startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification notification = ShopyPushNotification.createForegroundNotification(
-                this, CHANNEL_ID, "Shopy Push Service", "Manteniendo notificaciones activas");
-            startForeground(NOTIFICATION_ID, notification);
-        }
+private void startForegroundService() {
+    String channelId = CHANNEL_ID;
+    String title = "Shopy - Notificaciones Activas";
+    String text = "Manteniendo notificaciones activas para no perderte nada";
+    
+    Notification notification;
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 14
+        notification = new NotificationCompat.Builder(this, channelId)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSmallIcon(getApplicationInfo().icon)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build();
+        
+        startForeground(NOTIFICATION_ID, notification, 
+            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // Android 8-13
+        notification = ShopyPushNotification.createForegroundNotification(
+            this, CHANNEL_ID, title, text);
+        startForeground(NOTIFICATION_ID, notification);
     }
+}
     
     public static boolean isRunning() {
         return isRunning;

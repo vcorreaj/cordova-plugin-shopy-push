@@ -81,16 +81,28 @@ public class ShopyPushNotification {
         manager.notify(notificationId, notification);
     }
     
-    public static Notification createForegroundNotification(Context context, String channelId, 
-                                                           String title, String text) {
-        return new NotificationCompat.Builder(context, channelId)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setSmallIcon(context.getApplicationInfo().icon)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .build();
+public static Notification createForegroundNotification(Context context, String channelId, 
+                                                       String title, String text) {
+    
+    // Intent para abrir la app al tocar la notificación
+    Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+    int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        flags |= PendingIntent.FLAG_IMMUTABLE;
     }
+    PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, flags);
+    
+    return new NotificationCompat.Builder(context, channelId)
+        .setContentTitle(title)
+        .setContentText(text)
+        .setSmallIcon(context.getApplicationInfo().icon)
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setOngoing(true)
+        .setContentIntent(pendingIntent)
+        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        .setCategory(NotificationCompat.CATEGORY_SERVICE)
+        .build();
+}
     
     public static void clearAllNotifications(Context context) {
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
