@@ -1,0 +1,35 @@
+{
+  "name": "cordova-plugin-shopy-push",
+  "version": "1.0.0",
+  "description": "Cordova Plugin for handling push notifications with native Android 14+ support",
+  "main": "www/ShopyPush.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cordova",
+    "android",
+    "push",
+    "notification",
+    "firebase",
+    "fcm",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vcorreaj/cordova-plugin-shopy-push.git"
+  },
+  "engines": {
+    "cordova": ">=10.0.0",
+    "cordova-android": ">=10.0.0"
+  },
+  "cordova": {
+    "id": "cordova-plugin-shopy-push",
+    "platforms": [
+      "android"
+    ]
+  }
+}
