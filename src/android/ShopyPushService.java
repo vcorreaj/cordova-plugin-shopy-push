@@ -6,7 +6,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -30,10 +29,7 @@ public class ShopyPushService extends FirebaseMessagingService {
         super.onCreate();
         isRunning = true;
         
-        // Crear canal de notificaciones para Android 8+
         ShopyPushNotification.createNotificationChannel(this, CHANNEL_ID);
-        
-        // Iniciar foreground service
         startForegroundService();
     }
     
@@ -57,7 +53,6 @@ public class ShopyPushService extends FirebaseMessagingService {
         
         Map<String, Object> data = new HashMap<>();
         
-        // Procesar datos de la notificación
         RemoteMessage.Notification notification = remoteMessage.getNotification();
         if (notification != null) {
             data.put("title", notification.getTitle() != null ? notification.getTitle() : "");
@@ -66,19 +61,15 @@ public class ShopyPushService extends FirebaseMessagingService {
             data.put("clickAction", notification.getClickAction());
         }
         
-        // Procesar datos adicionales
         for (String key : remoteMessage.getData().keySet()) {
             data.put(key, remoteMessage.getData().get(key));
         }
         
-        // Determinar si la app está en foreground
         boolean isForeground = ShopyPushNotification.isAppInForeground(this);
         
         if (isForeground) {
-            // App en primer plano - enviar a JS para manejo personalizado
             ShopyPushPlugin.setLastNotificationData(data);
         } else {
-            // App en segundo plano/cerrada - mostrar notificación del sistema
             showSystemNotification(data);
         }
     }
@@ -90,39 +81,33 @@ public class ShopyPushService extends FirebaseMessagingService {
         ShopyPushNotification.showNotification(this, CHANNEL_ID, title, body, data);
     }
     
-private void startForegroundService() {
-    String channelId = CHANNEL_ID;
-    String title = "Shopy - Notificaciones Activas";
-    String text = "Manteniendo notificaciones activas para no perderte nada";
-    
-    Notification notification;
-    
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 14
-        notification = new NotificationCompat.Builder(this, channelId)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setSmallIcon(getApplicationInfo().icon)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .build();
+    private void startForegroundService() {
+        String channelId = CHANNEL_ID;
+        String title = "Shopy - Notificaciones Activas";
+        String text = "Manteniendo notificaciones activas para no perderte nada";
         
-        startForeground(NOTIFICATION_ID, notification, 
-            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 14
+            Notification notification = new NotificationCompat.Builder(this, channelId)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setSmallIcon(getApplicationInfo().icon)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .build();
             
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // Android 8-13
-        notification = ShopyPushNotification.createForegroundNotification(
-            this, CHANNEL_ID, title, text);
-        startForeground(NOTIFICATION_ID, notification);
+            startForeground(NOTIFICATION_ID, notification, 
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+                
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { // Android 8-13
+            Notification notification = ShopyPushNotification.createForegroundNotification(
+                this, CHANNEL_ID, title, text);
+            startForeground(NOTIFICATION_ID, notification);
+        }
     }
-}
     
     public static boolean isRunning() {
         return isRunning;
     }
-    
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+     
 }

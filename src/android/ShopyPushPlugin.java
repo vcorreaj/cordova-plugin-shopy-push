@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.PowerManager;  // ← AGREGADO
 import android.provider.Settings;
 
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -30,13 +31,11 @@ public class ShopyPushPlugin extends CordovaPlugin {
     protected void pluginInitialize() {
         super.pluginInitialize();
         
-        // Inicializar Firebase
         Context context = cordova.getActivity().getApplicationContext();
         if (FirebaseApp.getApps(context).isEmpty()) {
             FirebaseApp.initializeApp(context);
         }
         
-        // Iniciar servicio
         startPushService();
     }
     
@@ -46,39 +45,36 @@ public class ShopyPushPlugin extends CordovaPlugin {
             case "getToken":
                 getToken(callbackContext);
                 return true;
-                
             case "checkPermissions":
                 checkPermissions(callbackContext);
                 return true;
-                
             case "requestPermissions":
                 requestPermissions(callbackContext);
                 return true;
-                
             case "onNotification":
                 onNotification(callbackContext);
                 return true;
-                
             case "onTokenRefresh":
                 onTokenRefresh(callbackContext);
                 return true;
-                
             case "isServiceActive":
                 isServiceActive(callbackContext);
                 return true;
-                
             case "getAndroidVersion":
                 getAndroidVersion(callbackContext);
                 return true;
-                
             case "openAppSettings":
                 openAppSettings(callbackContext);
                 return true;
-                
             case "clearAllNotifications":
                 clearAllNotifications(callbackContext);
                 return true;
-                
+            case "checkBatteryOptimizations":
+                checkBatteryOptimizations(callbackContext);
+                return true;
+            case "openBatteryOptimizationSettings":
+                openBatteryOptimizationSettings(callbackContext);
+                return true;
             default:
                 return false;
         }
@@ -111,11 +107,7 @@ public class ShopyPushPlugin extends CordovaPlugin {
                 result.put("notificationPermission", true);
             }
             
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                result.put("foregroundServicePermission", true); // Ya declarado en manifiesto
-            } else {
-                result.put("foregroundServicePermission", true);
-            }
+            result.put("foregroundServicePermission", true);
             
         } catch (JSONException e) {
             callbackContext.error("Error creando respuesta");
@@ -137,7 +129,6 @@ public class ShopyPushPlugin extends CordovaPlugin {
         result.setKeepCallback(true);
         callbackContext.sendPluginResult(result);
         
-        // Si hay datos guardados, enviarlos inmediatamente
         if (lastNotificationData != null) {
             sendNotificationData();
         }
@@ -187,16 +178,6 @@ public class ShopyPushPlugin extends CordovaPlugin {
         callbackContext.success();
     }
     
-    private void startPushService() {
-        Context context = cordova.getActivity().getApplicationContext();
-        Intent intent = new Intent(context, ShopyPushService.class);
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
-        }
-    }
     private void checkBatteryOptimizations(CallbackContext callbackContext) {
         JSONObject result = new JSONObject();
         try {
@@ -214,6 +195,7 @@ public class ShopyPushPlugin extends CordovaPlugin {
         }
         callbackContext.success(result);
     }
+    
     private void openBatteryOptimizationSettings(CallbackContext callbackContext) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -222,7 +204,18 @@ public class ShopyPushPlugin extends CordovaPlugin {
         }
         callbackContext.success();
     }
-    // Métodos estáticos para comunicación con el servicio
+    
+    private void startPushService() {
+        Context context = cordova.getActivity().getApplicationContext();
+        Intent intent = new Intent(context, ShopyPushService.class);
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+    }
+    
     public static void sendNotificationData() {
         if (notificationCallbackContext != null && lastNotificationData != null) {
             JSONObject data = new JSONObject(lastNotificationData);
