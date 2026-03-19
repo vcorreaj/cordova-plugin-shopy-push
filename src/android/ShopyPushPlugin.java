@@ -4,10 +4,6 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
-
-import android.content.Intent;
-import android.content.Context;
-import android.os.Build;
 import android.util.Log;
 
 public class ShopyPushPlugin extends CordovaPlugin {
@@ -17,51 +13,22 @@ public class ShopyPushPlugin extends CordovaPlugin {
     @Override
     protected void pluginInitialize() {
         super.pluginInitialize();
-        Log.i(TAG, "Iniciando ShopyPushPlugin (background service)");
-        startBackgroundService();
+        Log.i(TAG, "========================================");
+        Log.i(TAG, "ShopyPushPlugin inicializado");
+        Log.i(TAG, "========================================");
     }
     
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+        Log.i(TAG, "execute: " + action);
+        
         switch (action) {
-            case "startBackgroundService":
-                startBackgroundService();
-                callbackContext.success();
-                return true;
-            case "stopBackgroundService":
-                stopBackgroundService();
-                callbackContext.success();
-                return true;
             case "isServiceRunning":
-                isServiceRunning(callbackContext);
+                callbackContext.success(ShopyPushService.isRunning() ? 1 : 0);
                 return true;
             default:
+                Log.w(TAG, "Acción desconocida: " + action);
                 return false;
         }
-    }
-    
-    private void startBackgroundService() {
-        Context context = cordova.getActivity().getApplicationContext();
-        Intent intent = new Intent(context, ShopyPushService.class);
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
-        }
-        Log.i(TAG, "✅ Servicio background iniciado");
-    }
-    
-    private void stopBackgroundService() {
-        Context context = cordova.getActivity().getApplicationContext();
-        Intent intent = new Intent(context, ShopyPushService.class);
-        context.stopService(intent);
-        Log.i(TAG, "⏹️ Servicio background detenido");
-    }
- 
-    private void isServiceRunning(CallbackContext callbackContext) {
-    boolean isRunning = ShopyPushService.isRunning();
-        Log.i(TAG, "Verificando estado del servicio: " + (isRunning ? "ACTIVO" : "INACTIVO"));
-        callbackContext.success(isRunning ? 1 : 0);
     }
 }
