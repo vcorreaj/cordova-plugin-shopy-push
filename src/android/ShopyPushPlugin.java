@@ -32,6 +32,9 @@ public class ShopyPushPlugin extends CordovaPlugin {
                 stopBackgroundService();
                 callbackContext.success();
                 return true;
+            case "isServiceRunning":
+                isServiceRunning(callbackContext);
+                return true;
             default:
                 return false;
         }
@@ -54,5 +57,11 @@ public class ShopyPushPlugin extends CordovaPlugin {
         Intent intent = new Intent(context, ShopyPushService.class);
         context.stopService(intent);
         Log.i(TAG, "⏹️ Servicio background detenido");
+    }
+ 
+    private void isServiceRunning(CallbackContext callbackContext) {
+    boolean isRunning = ShopyPushService.isRunning();
+        Log.i(TAG, "Verificando estado del servicio: " + (isRunning ? "ACTIVO" : "INACTIVO"));
+        callbackContext.success(isRunning ? 1 : 0);
     }
 }
