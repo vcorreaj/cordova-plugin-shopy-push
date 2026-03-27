@@ -4,8 +4,9 @@
         version="1.0.0">
     
     <name>ShopyPush</name>
-    <description>Plugin personalizado que mantiene FCM activo y maneja notificaciones en Android 14+</description>
+    <description>Cordova Plugin for persistent FCM notifications when app is closed</description>
     <license>MIT</license>
+    <keywords>cordova,android,fcm,notifications,background,foreground-service</keywords>
     
     <js-module src="www/ShopyPush.js" name="ShopyPush">
         <clobbers target="ShopyPush" />
@@ -14,38 +15,57 @@
     <platform name="android">
         <config-file target="config.xml" parent="/*">
             <feature name="ShopyPush">
-                <param name="android-package" value="com.shopy.push.ShopyPushPlugin"/>
+                <param name="android-package" value="sigmisa.com.shopy.ShopyPushPlugin"/>
             </feature>
         </config-file>
         
-        <!-- Archivos fuente -->
-        <source-file src="src/android/ShopyPushPlugin.java" target-dir="src/com/shopy/push" />
-        <source-file src="src/android/ShopyPushService.java" target-dir="src/com/shopy/push" />
+        <source-file src="src/android/ShopyPushPlugin.java" target-dir="src/sigmisa/com/shopy" />
+        <source-file src="src/android/ShopyPushService.java" target-dir="src/sigmisa/com/shopy" />
+        <source-file src="src/android/ShopyPushFirebaseService.java" target-dir="src/sigmisa/com/shopy" />
+        <source-file src="src/android/ShopyPushNotification.java" target-dir="src/sigmisa/com/shopy" />
+        <source-file src="src/android/ShopyPushReceiver.java" target-dir="src/sigmisa/com/shopy" />
         
-        <!-- Dependencias de Firebase (necesarias para FCM) -->
-        <framework src="com.google.firebase:firebase-messaging:23.4.0" />
-        <framework src="com.google.firebase:firebase-common:20.4.0" />
+        <framework src="com.google.firebase:firebase-messaging:23.+" />
+        <framework src="com.google.android.gms:play-services-base:18.+" />
         
-        <!-- PERMISOS PARA ANDROID 14+ -->
         <config-file target="AndroidManifest.xml" parent="/manifest">
-            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
             <uses-permission android:name="android.permission.WAKE_LOCK" />
             <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.INTERNET" />
         </config-file>
         
-        <!-- 🔥 SERVICIO PERSONALIZADO (con tipo dataSync para Android 14) -->
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <!-- Servicio principal de foreground -->
             <service
-                android:name="com.shopy.push.ShopyPushService"
+                android:name="sigmisa.com.shopy.ShopyPushService"
                 android:enabled="true"
                 android:exported="false"
-                android:foregroundServiceType="dataSync">
+                android:foregroundServiceType="dataSync" />
+            
+            <!-- Firebase Messaging Service -->
+            <service
+                android:name="sigmisa.com.shopy.ShopyPushFirebaseService"
+                android:exported="false">
                 <intent-filter>
                     <action android:name="com.google.firebase.MESSAGING_EVENT" />
                 </intent-filter>
             </service>
+            
+            <!-- Boot Receiver para iniciar el servicio al arrancar el dispositivo -->
+            <receiver
+                android:name="sigmisa.com.shopy.ShopyPushReceiver"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="android.intent.action.BOOT_COMPLETED" />
+                    <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                </intent-filter>
+            </receiver>
         </config-file>
+        
+        <!-- Agregar google-services.json -->
+        <resource-file src="google-services.json" target="app/google-services.json" />
     </platform>
 </plugin>
